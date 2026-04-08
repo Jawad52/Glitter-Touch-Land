@@ -17,14 +17,14 @@ class Particle {
   Particle({
     required this.position,
     required this.prevPosition,
-    this.acceleration = Vector2.zero,
+    Vector2? acceleration,
     required this.radius,
     required this.color,
     this.rotation = 0,
     this.rotationSpeed = 0,
     required this.type,
     this.vertices = const [],
-  });
+  }) : acceleration = acceleration ?? Vector2.zero();
 
   void update(double dt, Vector2 gravity) {
     // Verlet integration
@@ -35,7 +35,7 @@ class Particle {
     position = position + velocity + (acceleration + gravity) * (dt * dt);
     
     // Reset acceleration
-    acceleration = Vector2.zero;
+    acceleration = Vector2.zero();
     
     // Update rotation
     rotation += rotationSpeed * dt;

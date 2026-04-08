@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import 'package:flutter/material.dart';
 import '../../domain/entities/particle.dart';
 import 'package:vector_math/vector_math_64.dart';
 
