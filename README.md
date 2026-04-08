@@ -29,7 +29,7 @@ Rendering: Canvas API for low-level, high-speed particle drawing.
 Clone the repository:
 
 Bash
-git clone https://github.com/yourusername/shimmerflow.git
+git clone https://github.com/yourusername/shimmerflow.git](https://github.com/Jawad52/Glitter-Touch-Land.git
 Install dependencies:
 
 Bash
