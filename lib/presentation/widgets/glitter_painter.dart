@@ -1,26 +1,20 @@
 import 'dart:math';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../domain/entities/particle.dart';
 
 class GlitterPainter extends CustomPainter {
   final List<Particle> particles;
-  final double tiltAmount; // To influence shimmer
+  final double tiltAmount;
 
   GlitterPainter({required this.particles, this.tiltAmount = 0});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final finePaint = Paint()..strokeCap = StrokeCap.round;
     final chunkyPaint = Paint()..style = PaintingStyle.fill;
-
-    // Separate particles for batch drawing
-    final List<Offset> finePoints = [];
-    final List<Color> fineColors = [];
 
     for (final p in particles) {
       // Shimmer Logic: Color fluctuation based on rotation and tilt
-      final shimmer = (sin(p.rotation + tiltAmount) * 0.2 + 0.8);
+      final shimmer = (sin(p.rotation + tiltAmount) * 0.3 + 0.7);
       final displayColor = Color.fromARGB(
         p.color.alpha,
         (p.color.red * shimmer).toInt().clamp(0, 255),
@@ -29,8 +23,13 @@ class GlitterPainter extends CustomPainter {
       );
 
       if (p.type == ParticleType.fine) {
-        finePoints.add(Offset(p.position.x, p.position.y));
-        fineColors.add(displayColor);
+        // Use drawRect for fine particles to support individual colors easily
+        // and maintain performance for 2000-5000 particles.
+        final paint = Paint()..color = displayColor;
+        canvas.drawRect(
+          Rect.fromLTWH(p.position.x, p.position.y, p.radius, p.radius),
+          paint,
+        );
       } else {
         // Chunky Glitter: Draw Polygons
         chunkyPaint.color = displayColor;
@@ -52,21 +51,6 @@ class GlitterPainter extends CustomPainter {
           canvas.drawPath(path, chunkyPaint);
         }
       }
-    }
-
-    // Draw all fine sand particles in one call for performance
-    if (finePoints.isNotEmpty) {
-      canvas.drawPoints(
-        PointMode.points,
-        finePoints,
-        finePaint..strokeWidth = 2.0, // Adjust for sand size
-      );
-      // Note: drawPoints doesn't support individual colors per point in this simple way,
-      // but we can use drawVertices for even higher performance if needed.
-      // For simplicity and 2000-5000 particles, drawPoints/drawPath is usually enough.
-      // However, to keep different colors, we might need a loop or drawVertices.
-      // Let's stick to drawPoints for now but use a single color for batch if performance is key, 
-      // or loop if color variety is required.
     }
   }
 

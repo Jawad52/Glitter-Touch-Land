@@ -29,15 +29,16 @@ class _GlitterJarPageState extends State<GlitterJarPage> with SingleTickerProvid
     _controller.repeat();
 
     _accelerometerSubscription = accelerometerEventStream().listen((AccelerometerEvent event) {
-      // Map accelerometer to gravity
-      // Note: Accelerometer values are inverted relative to screen coordinates
-      context.read<GlitterBloc>().add(UpdateGravityEvent(-event.x * _gravityScale, event.y * _gravityScale));
+      if (mounted) {
+        context.read<GlitterBloc>().add(UpdateGravityEvent(-event.x * _gravityScale, event.y * _gravityScale));
+      }
     });
   }
 
   void _onTick() {
+    if (!mounted) return;
     final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
-    if (renderBox != null) {
+    if (renderBox != null && renderBox.hasSize) {
       final size = renderBox.size;
       context.read<GlitterBloc>().add(UpdatePhysicsEvent(0.016, size));
     }
@@ -55,7 +56,6 @@ class _GlitterJarPageState extends State<GlitterJarPage> with SingleTickerProvid
     final threshold = size.height * 0.7;
 
     if (tapY < threshold) {
-      // Top 70%: Spawn particles
       context.read<GlitterBloc>().add(SpawnParticlesEvent(details.localPosition, 50));
     }
   }
@@ -65,39 +65,36 @@ class _GlitterJarPageState extends State<GlitterJarPage> with SingleTickerProvid
     final threshold = size.height * 0.7;
 
     if (panY >= threshold) {
-      // Bottom 30%: Disturb existing pile
       context.read<GlitterBloc>().add(ApplyForceEvent(details.localPosition, 100.0, 50.0));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => GlitterBloc(),
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        body: LayoutBuilder(
-          builder: (context, constraints) {
-            final size = Size(constraints.maxWidth, constraints.maxHeight);
-            return GestureDetector(
-              onTapDown: (details) => _handleTap(details, size),
-              onPanUpdate: (details) => _handlePanUpdate(details, size),
-              child: BlocBuilder<GlitterBloc, GlitterState>(
-                builder: (context, state) {
-                  return RepaintBoundary(
-                    child: CustomPaint(
-                      size: size,
-                      painter: GlitterPainter(
-                        particles: state.particles,
-                        tiltAmount: state.gravity.x + state.gravity.y,
-                      ),
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final size = Size(constraints.maxWidth, constraints.maxHeight);
+          return GestureDetector(
+            onTapDown: (details) => _handleTap(details, size),
+            onPanUpdate: (details) => _handlePanUpdate(details, size),
+            behavior: HitTestBehavior.opaque,
+            child: BlocBuilder<GlitterBloc, GlitterState>(
+              builder: (context, state) {
+                return RepaintBoundary(
+                  child: CustomPaint(
+                    size: size,
+                    painter: GlitterPainter(
+                      particles: state.particles,
+                      tiltAmount: state.gravity.x + state.gravity.y,
                     ),
-                  );
-                },
-              ),
-            );
-          },
-        ),
+                  ),
+                );
+              },
+            ),
+          );
+        },
       ),
     );
   }
