@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:glitter_touch_land/presentation/bloc/glitter_bloc.dart';
+import 'package:glitter_touch_land/presentation/bloc/theme_bloc.dart';
 import 'package:glitter_touch_land/presentation/pages/glitter_jar_page.dart';
 
 void main() {
@@ -11,8 +12,11 @@ void main() {
     DeviceOrientation.portraitDown,
   ]);
   runApp(
-    BlocProvider(
-      create: (context) => GlitterBloc(),
+    MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (context) => GlitterBloc()),
+        BlocProvider(create: (context) => ThemeBloc()),
+      ],
       child: const GlitterApp(),
     ),
   );

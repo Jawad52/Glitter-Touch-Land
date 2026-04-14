@@ -5,6 +5,9 @@ import 'package:sensors_plus/sensors_plus.dart';
 import '../bloc/glitter_bloc.dart';
 import '../bloc/glitter_event.dart';
 import '../bloc/glitter_state.dart';
+import '../bloc/theme_bloc.dart';
+import '../bloc/theme_event.dart';
+import '../bloc/theme_state.dart';
 import '../widgets/glitter_painter.dart';
 
 class GlitterJarPage extends StatefulWidget {
@@ -17,6 +20,7 @@ class GlitterJarPage extends StatefulWidget {
 class _GlitterJarPageState extends State<GlitterJarPage> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   StreamSubscription? _accelerometerSubscription;
+  Timer? _colorTimer;
   final double _gravityScale = 9.8;
 
   @override
@@ -31,6 +35,13 @@ class _GlitterJarPageState extends State<GlitterJarPage> with SingleTickerProvid
     _accelerometerSubscription = accelerometerEventStream().listen((AccelerometerEvent event) {
       if (mounted) {
         context.read<GlitterBloc>().add(UpdateGravityEvent(-event.x * _gravityScale, event.y * _gravityScale));
+      }
+    });
+
+    // Change background color every 2 minutes
+    _colorTimer = Timer.periodic(const Duration(minutes: 2), (timer) {
+      if (mounted) {
+        context.read<ThemeBloc>().add(ChangeBackgroundColorEvent());
       }
     });
   }
@@ -48,6 +59,7 @@ class _GlitterJarPageState extends State<GlitterJarPage> with SingleTickerProvid
   void dispose() {
     _controller.dispose();
     _accelerometerSubscription?.cancel();
+    _colorTimer?.cancel();
     super.dispose();
   }
 
@@ -71,31 +83,35 @@ class _GlitterJarPageState extends State<GlitterJarPage> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final size = Size(constraints.maxWidth, constraints.maxHeight);
-          return GestureDetector(
-            onTapDown: (details) => _handleTap(details, size),
-            onPanUpdate: (details) => _handlePanUpdate(details, size),
-            behavior: HitTestBehavior.opaque,
-            child: BlocBuilder<GlitterBloc, GlitterState>(
-              builder: (context, state) {
-                return RepaintBoundary(
-                  child: CustomPaint(
-                    size: size,
-                    painter: GlitterPainter(
-                      particles: state.particles,
-                      tiltAmount: state.gravity.x + state.gravity.y,
-                    ),
-                  ),
-                );
-              },
-            ),
-          );
-        },
-      ),
+    return BlocBuilder<ThemeBloc, ThemeState>(
+      builder: (context, themeState) {
+        return Scaffold(
+          backgroundColor: themeState.backgroundColor,
+          body: LayoutBuilder(
+            builder: (context, constraints) {
+              final size = Size(constraints.maxWidth, constraints.maxHeight);
+              return GestureDetector(
+                onTapDown: (details) => _handleTap(details, size),
+                onPanUpdate: (details) => _handlePanUpdate(details, size),
+                behavior: HitTestBehavior.opaque,
+                child: BlocBuilder<GlitterBloc, GlitterState>(
+                  builder: (context, state) {
+                    return RepaintBoundary(
+                      child: CustomPaint(
+                        size: size,
+                        painter: GlitterPainter(
+                          particles: state.particles,
+                          tiltAmount: state.gravity.x + state.gravity.y,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }
